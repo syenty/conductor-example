@@ -1,0 +1,44 @@
+# Build outputs
+/build/
+/*/build/
+out/
+bin/
+dist/
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!gradle/wrapper/gradle-wrapper.js
+*.gradle.kts.incr
+
+# IDE
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Compiled classes
+*.class
+
+# Local properties
+*.local.properties
+/local.properties
+
+# Generated files
+build/
+target/
+
+# Spring Boot
+*.pid
+*.exec

@@ -41,7 +41,7 @@
       │     │
 ┌─────▼───┐ ┌▼──────────┐ ┌────────────┐
 │ Order   │ │ Payment   │ │ Inventory  │
-│ Service │ │ Service   │ │ Service    │
+│ App     │ │ App       │ │ App        │
 └─────────┘ └───────────┘ └────────────┘
 ```
 
@@ -84,10 +84,10 @@ conductor-spring-sample/
 │  ├─ W10_manual_approval.json
 │  ├─ W11_event_wait.json
 │  └─ W12_sub_workflow.json
-├─ services/
-│  ├─ order-service/
-│  ├─ payment-service/
-│  ├─ inventory-service/
+├─ apps/
+│  ├─ order-app/
+│  ├─ payment-app/
+│  ├─ inventory-app/
 │  └─ orchestrator-worker/
 └─ scripts/
    ├─ register_tasks.sh
@@ -166,10 +166,10 @@ conductor-spring-sample/
 
 예:
 
-- Payment Service
+- Payment App
   - `failRate=0.3`
   - `delayMs=5000`
-- Inventory Service
+- Inventory App
   - `forceOutOfStock=true`
   - `partialFailIndex=2`
 

@@ -1,0 +1,8 @@
+rootProject.name = "conductor-example"
+
+include(
+    "apps:order-app",
+    "apps:payment-app",
+    "apps:inventory-app",
+    "apps:orchestrator-worker"
+)

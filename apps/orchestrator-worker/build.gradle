@@ -1,0 +1,12 @@
+plugins {
+    id "org.springframework.boot"
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // TODO: add Netflix Conductor client dependency when wiring workflows
+
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+}
