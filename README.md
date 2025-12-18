@@ -20,12 +20,14 @@
 ## 🧱 전체 구성
 
 ### 기술 스택
-- Java 17
-- Spring Boot
+
+- Java 21
+- Spring Boot 3.5.7
 - Netflix Conductor OSS
 - Docker / docker-compose
 
 ### 서비스 구성
+
 ```
 ┌────────────────────┐
 │  Conductor Server  │
@@ -48,14 +50,17 @@
 ## 🔑 설계 원칙
 
 ### 1. 기존 서비스 구조 유지
+
 - `order`, `payment`, `inventory` 서비스는 **순수 도메인 API**만 제공
 - 오케스트레이션/재시도/분기 로직은 서비스 코드에 넣지 않음
 
 ### 2. 워커는 별도 컨테이너로 분리
+
 - `orchestrator-worker` 하나만 두고 모든 Task를 처리
 - 워커는 Conductor에서 Task를 poll → 서비스 API 호출 → 결과 보고
 
 ### 3. 워크플로우는 “데이터(JSON)”로 관리
+
 - 흐름 변경 시 **서비스 코드 수정 없이** 워크플로우 정의만 변경
 - 재시도/타임아웃/보상 정책은 선언적으로 설정
 
@@ -94,6 +99,7 @@ conductor-spring-sample/
 ## 🔁 워크플로우 시나리오 구성
 
 ### A. 기본 흐름
+
 1. **W1 – Basic Order Flow**  
    `CreateOrder → AuthorizePayment → ReserveInventory → ConfirmOrder`
 
@@ -106,8 +112,10 @@ conductor-spring-sample/
 ---
 
 ### B. 조건 분기
-4. **W4 – Payment Method Switch**  
-   - CARD → 바로 진행  
+
+4. **W4 – Payment Method Switch**
+
+   - CARD → 바로 진행
    - BANK_TRANSFER → 입금 확인 대기
 
 5. **W5 – Inventory Shortage Branch**  
@@ -116,6 +124,7 @@ conductor-spring-sample/
 ---
 
 ### C. 병렬 처리
+
 6. **W6 – Parallel Post Payment**  
    결제 후 재고 예약 + 주문 상태 변경 병렬 실행
 
@@ -125,6 +134,7 @@ conductor-spring-sample/
 ---
 
 ### D. 보상(Saga)
+
 8. **W8 – Inventory Fail → Refund**  
    재고 실패 시 결제 환불 + 주문 취소
 
@@ -134,6 +144,7 @@ conductor-spring-sample/
 ---
 
 ### E. 사람/외부 이벤트 개입
+
 10. **W10 – Manual Approval**  
     특정 금액 이상 주문은 관리자 승인 후 진행
 
@@ -143,6 +154,7 @@ conductor-spring-sample/
 ---
 
 ### F. 구조화
+
 12. **W12 – Sub Workflow**  
     결제 처리를 서브 워크플로우로 분리하여 재사용
 
@@ -153,6 +165,7 @@ conductor-spring-sample/
 각 서비스는 시나리오 테스트를 위해 **입력 파라미터로 동작을 제어**합니다.
 
 예:
+
 - Payment Service
   - `failRate=0.3`
   - `delayMs=5000`
@@ -177,4 +190,3 @@ conductor-spring-sample/
 
 > **메시지 큐는 ‘일 전달’을 담당하고,  
 > Conductor는 그 일을 ‘어떤 순서와 상태로 끝낼지’를 관리한다.**
-
