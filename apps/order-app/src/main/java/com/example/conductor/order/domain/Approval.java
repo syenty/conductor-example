@@ -1,4 +1,4 @@
-package com.example.conductor.payment.domain;
+package com.example.conductor.order.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,37 +8,27 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "payments")
-public class Payment {
+@Table(name = "approvals")
+public class Approval {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_no", nullable = false, unique = true, length = 64)
+    @Column(name = "order_no", nullable = false, length = 64)
     private String orderNo;
 
     @Column(nullable = false, length = 32)
     private String status;
 
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal amount;
+    @Column(name = "requested_by", length = 64)
+    private String requestedBy;
 
-    @Column(nullable = false, length = 8)
-    private String currency;
-
-    @Column(length = 32)
-    private String method;
-
-    @Column(name = "fail_rate", precision = 4, scale = 3)
-    private BigDecimal failRate;
-
-    @Column(name = "delay_ms")
-    private Integer delayMs;
+    @Column
+    private String comment;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -78,44 +68,20 @@ public class Payment {
         this.status = status;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public String getRequestedBy() {
+        return requestedBy;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setRequestedBy(String requestedBy) {
+        this.requestedBy = requestedBy;
     }
 
-    public String getCurrency() {
-        return currency;
+    public String getComment() {
+        return comment;
     }
 
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public BigDecimal getFailRate() {
-        return failRate;
-    }
-
-    public void setFailRate(BigDecimal failRate) {
-        this.failRate = failRate;
-    }
-
-    public Integer getDelayMs() {
-        return delayMs;
-    }
-
-    public void setDelayMs(Integer delayMs) {
-        this.delayMs = delayMs;
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
     public Instant getCreatedAt() {
