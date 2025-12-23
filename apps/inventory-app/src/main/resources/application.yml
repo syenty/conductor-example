@@ -1,6 +1,16 @@
 spring:
   application:
     name: inventory-app
+  datasource:
+    url: jdbc:postgresql://localhost:5435/inventory_db
+    username: inventory_user
+    password: inventory_pass
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 server:
   port: 8083

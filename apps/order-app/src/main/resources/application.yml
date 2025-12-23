@@ -1,6 +1,16 @@
 spring:
   application:
     name: order-app
+  datasource:
+    url: jdbc:postgresql://localhost:5433/order_db
+    username: order_user
+    password: order_pass
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 server:
   port: 8081

@@ -1,6 +1,16 @@
 spring:
   application:
     name: payment-app
+  datasource:
+    url: jdbc:postgresql://localhost:5434/payment_db
+    username: payment_user
+    password: payment_pass
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 server:
   port: 8082
