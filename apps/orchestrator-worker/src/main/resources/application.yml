@@ -9,6 +9,9 @@ orchestrator:
   order-base-url: http://localhost:8081
   payment-base-url: http://localhost:8082
   inventory-base-url: http://localhost:8083
+  conductor-base-url: http://localhost:8080/api
+  worker-id: orchestrator-worker
+  thread-count: 4
 
 management:
   endpoints:

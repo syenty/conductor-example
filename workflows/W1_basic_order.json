@@ -1,6 +1,122 @@
 {
-  "name": "W1_basic_order",
+  "name": "basic_order",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "Basic order flow: create order -> authorize payment -> reserve inventory -> confirm",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "authorize_payment",
+      "taskReferenceName": "authorize_payment",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "amount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "method": "${workflow.input.paymentMethod}",
+        "failRate": "${workflow.input.paymentFailRate}",
+        "delayMs": "${workflow.input.paymentDelayMs}"
+      }
+    },
+    {
+      "name": "reserve_inventory",
+      "taskReferenceName": "reserve_inventory",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+        "partialFailIndex": "${workflow.input.partialFailIndex}"
+      }
+    },
+    {
+      "name": "decide_payment",
+      "taskReferenceName": "decide_payment",
+      "type": "DECISION",
+      "inputParameters": {
+        "paymentStatus": "${authorize_payment.output.status}",
+        "inventoryStatus": "${reserve_inventory.output.status}",
+        "orderNo": "${workflow.input.orderNo}"
+      },
+      "caseValueParam": "paymentStatus",
+      "decisionCases": {
+        "AUTHORIZED": [
+          {
+            "name": "decide_inventory",
+            "taskReferenceName": "decide_inventory",
+            "type": "DECISION",
+            "inputParameters": {
+              "inventoryStatus": "${reserve_inventory.output.status}",
+              "orderNo": "${workflow.input.orderNo}"
+            },
+            "caseValueParam": "inventoryStatus",
+            "decisionCases": {
+              "RESERVED": [
+                {
+                  "name": "confirm_order",
+                  "taskReferenceName": "confirm_order",
+                  "type": "SIMPLE",
+                  "inputParameters": {
+                    "orderNo": "${workflow.input.orderNo}"
+                  }
+                }
+              ]
+            },
+            "defaultCase": [
+              {
+                "name": "cancel_order",
+                "taskReferenceName": "cancel_order_inventory",
+                "type": "SIMPLE",
+                "inputParameters": {
+                  "orderNo": "${workflow.input.orderNo}"
+                }
+              },
+              {
+                "name": "refund_payment",
+                "taskReferenceName": "refund_payment_inventory",
+                "type": "SIMPLE",
+                "inputParameters": {
+                  "orderNo": "${workflow.input.orderNo}",
+                  "reason": "inventory_failed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "defaultCase": [
+        {
+          "name": "cancel_order",
+          "taskReferenceName": "cancel_order_payment",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "orderNo": "${workflow.input.orderNo}"
+          }
+        }
+      ]
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ]
 }
