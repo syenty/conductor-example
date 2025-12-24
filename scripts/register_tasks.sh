@@ -8,8 +8,9 @@ echo "Registering Conductor tasks to ${BASE_URL}..."
 
 for task in "${TASK_DIR}"/*.json; do
   echo "-> ${task}"
-  curl -sS -X POST "${BASE_URL}/metadata/task" \
+  # Wrap single task definition in array and POST to /metadata/taskdefs
+  curl -sS -X POST "${BASE_URL}/metadata/taskdefs" \
     -H "Content-Type: application/json" \
-    --data-binary @"${task}"
+    -d "[$(cat "${task}")]"
   echo
 done

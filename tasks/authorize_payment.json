@@ -2,7 +2,8 @@
   "name": "authorize_payment",
   "description": "Authorize payment in payment-app",
   "retryCount": 0,
-  "timeoutSeconds": 30,
+  "timeoutSeconds": 60,
+  "responseTimeoutSeconds": 30,
   "timeoutPolicy": "TIME_OUT_WF",
   "ownerEmail": "dev@example.com"
 }
