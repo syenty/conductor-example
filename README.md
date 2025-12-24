@@ -40,6 +40,15 @@
   - 장점: 흐름 변경이 코드 수정 없이 가능하고, 재시도/분기/보상을 선언적으로 관리
   - 한계: 워크플로우 엔진 운영 및 워커 관리가 필요
 
+### Task Type 간략 설명
+
+- **SIMPLE**: 워커가 수행하는 일반 Task (예: create_order, authorize_payment)
+- **DECISION**: 조건 분기 (입력/이전 결과에 따라 다음 Task 선택)
+- **FORK_JOIN**: 병렬 실행 후 JOIN으로 합류
+- **JOIN**: 병렬 처리 결과를 합류
+- **SUB_WORKFLOW**: 다른 워크플로우 호출
+- **WAIT / EVENT**: 외부 이벤트나 시간 대기
+
 ### 서비스 구성
 
 ```
