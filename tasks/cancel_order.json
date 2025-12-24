@@ -1,0 +1,9 @@
+{
+  "name": "cancel_order",
+  "description": "Cancel order in order-app",
+  "retryCount": 0,
+  "timeoutSeconds": 60,
+  "responseTimeoutSeconds": 30,
+  "timeoutPolicy": "TIME_OUT_WF",
+  "ownerEmail": "dev@example.com"
+}
