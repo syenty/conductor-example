@@ -162,8 +162,19 @@ public class InventoryService {
         InventoryEvent event = new InventoryEvent();
         event.setReservation(reservation);
         event.setEventType(type);
-        event.setDetail(detail);
+        event.setDetail(toJsonDetail(detail));
         eventRepository.save(event);
+    }
+
+    private String toJsonDetail(String detail) {
+        if (detail == null) {
+            return null;
+        }
+        return "{\"message\":\"" + escapeJson(detail) + "\"}";
+    }
+
+    private String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private static class ReservationResult {
