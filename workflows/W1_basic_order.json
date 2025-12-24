@@ -2,6 +2,7 @@
   "name": "basic_order",
   "version": 1,
   "description": "Basic order flow: create order -> authorize payment -> reserve inventory -> confirm",
+  "ownerEmail": "dev@example.com",
   "tasks": [
     {
       "name": "create_order",
