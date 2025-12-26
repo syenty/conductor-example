@@ -1,0 +1,9 @@
+{
+  "name": "check_inventory",
+  "description": "Check inventory availability without reservation",
+  "retryCount": 0,
+  "timeoutSeconds": 30,
+  "responseTimeoutSeconds": 20,
+  "timeoutPolicy": "TIME_OUT_WF",
+  "ownerEmail": "dev@example.com"
+}
