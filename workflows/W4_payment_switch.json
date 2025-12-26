@@ -1,6 +1,130 @@
 {
-  "name": "W4_payment_switch",
-  "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "name": "payment_method_switch",
+  "version": 2,
+  "description": "W4: Payment method switch - CARD proceeds immediately, BANK_TRANSFER waits for deposit confirmation",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "decide_payment_method",
+      "taskReferenceName": "decide_payment_method",
+      "type": "SWITCH",
+      "inputParameters": {
+        "paymentMethod": "${workflow.input.paymentMethod}"
+      },
+      "expression": "paymentMethod",
+      "evaluatorType": "value-param",
+      "decisionCases": {
+        "CARD": [
+          {
+            "name": "authorize_payment",
+            "taskReferenceName": "authorize_payment_card",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "amount": "${workflow.input.totalAmount}",
+              "currency": "${workflow.input.currency}",
+              "method": "CARD",
+              "failRate": "${workflow.input.paymentFailRate}",
+              "delayMs": "${workflow.input.paymentDelayMs}"
+            }
+          }
+        ],
+        "BANK_TRANSFER": [
+          {
+            "name": "authorize_payment",
+            "taskReferenceName": "authorize_payment_bank",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "amount": "${workflow.input.totalAmount}",
+              "currency": "${workflow.input.currency}",
+              "method": "BANK_TRANSFER",
+              "failRate": 0,
+              "delayMs": 0
+            }
+          },
+          {
+            "name": "wait_for_bank_deposit",
+            "taskReferenceName": "wait_for_bank_deposit",
+            "type": "WAIT",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "expectedAmount": "${workflow.input.totalAmount}",
+              "currency": "${workflow.input.currency}"
+            }
+          },
+          {
+            "name": "confirm_bank_transfer",
+            "taskReferenceName": "confirm_bank_transfer",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "amount": "${workflow.input.totalAmount}",
+              "currency": "${workflow.input.currency}"
+            }
+          }
+        ]
+      },
+      "defaultCase": [
+        {
+          "name": "cancel_order",
+          "taskReferenceName": "cancel_order_invalid_method",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "orderNo": "${workflow.input.orderNo}",
+            "reason": "Invalid payment method"
+          }
+        }
+      ]
+    },
+    {
+      "name": "reserve_inventory",
+      "taskReferenceName": "reserve_inventory",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+        "partialFailIndex": "${workflow.input.partialFailIndex}"
+      }
+    },
+    {
+      "name": "confirm_order",
+      "taskReferenceName": "confirm_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}"
+      }
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 3600
 }

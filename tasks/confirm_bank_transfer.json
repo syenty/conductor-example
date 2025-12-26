@@ -1,0 +1,10 @@
+{
+  "name": "confirm_bank_transfer",
+  "description": "Confirm bank transfer deposit in payment-app",
+  "retryCount": 3,
+  "retryLogic": "FIXED",
+  "retryDelaySeconds": 5,
+  "timeoutSeconds": 30,
+  "responseTimeoutSeconds": 20,
+  "ownerEmail": "dev@example.com"
+}
