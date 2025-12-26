@@ -5,8 +5,8 @@
   "retryLogic": "EXPONENTIAL_BACKOFF",
   "retryDelaySeconds": 2,
   "backoffScaleFactor": 2,
-  "timeoutSeconds": 60,
-  "responseTimeoutSeconds": 30,
+  "timeoutSeconds": 10,
+  "responseTimeoutSeconds": 8,
   "timeoutPolicy": "TIME_OUT_WF",
   "ownerEmail": "dev@example.com"
 }
