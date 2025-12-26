@@ -1,6 +1,6 @@
 {
   "name": "payment_method_switch",
-  "version": 1,
+  "version": 2,
   "description": "W4: Payment method switch - CARD proceeds immediately, BANK_TRANSFER waits for deposit confirmation",
   "ownerEmail": "dev@example.com",
   "tasks": [
@@ -43,6 +43,19 @@
           }
         ],
         "BANK_TRANSFER": [
+          {
+            "name": "authorize_payment",
+            "taskReferenceName": "authorize_payment_bank",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "amount": "${workflow.input.totalAmount}",
+              "currency": "${workflow.input.currency}",
+              "method": "BANK_TRANSFER",
+              "failRate": 0,
+              "delayMs": 0
+            }
+          },
           {
             "name": "wait_for_bank_deposit",
             "taskReferenceName": "wait_for_bank_deposit",

@@ -11,7 +11,7 @@ echo ""
 echo "Test 1: CARD payment (immediate processing)"
 ORDER_NO_1="ORD-W4-${TIMESTAMP}-1"
 echo "Order No: ${ORDER_NO_1}"
-WORKFLOW_ID_1=$(curl -sS -X POST "${CONDUCTOR_BASE_URL}/workflow/payment_method_switch" \
+WORKFLOW_ID_1=$(curl -sS -X POST "${CONDUCTOR_BASE_URL}/workflow/payment_method_switch?version=2" \
   -H "Content-Type: application/json" \
   -d "{
     \"orderNo\": \"${ORDER_NO_1}\",
@@ -37,7 +37,7 @@ echo ""
 echo "Test 2: BANK_TRANSFER payment (waits for deposit)"
 ORDER_NO_2="ORD-W4-${TIMESTAMP}-2"
 echo "Order No: ${ORDER_NO_2}"
-WORKFLOW_ID_2=$(curl -sS -X POST "${CONDUCTOR_BASE_URL}/workflow/payment_method_switch" \
+WORKFLOW_ID_2=$(curl -sS -X POST "${CONDUCTOR_BASE_URL}/workflow/payment_method_switch?version=2" \
   -H "Content-Type: application/json" \
   -d "{
     \"orderNo\": \"${ORDER_NO_2}\",

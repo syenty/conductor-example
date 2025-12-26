@@ -39,7 +39,7 @@ public class PaymentClient {
     public PaymentResponse confirmBankTransfer(String orderNo) {
         ResponseEntity<PaymentResponse> response = restTemplate.postForEntity(
             endpoints.getPaymentBaseUrl() + "/payments/" + orderNo + "/bank-transfer/confirm",
-            null,
+            java.util.Collections.emptyMap(),
             PaymentResponse.class
         );
         return response.getBody();
