@@ -29,9 +29,31 @@ public class AuthorizePaymentWorker implements Worker {
   @Override
   public TaskResult execute(Task task) {
     TaskResult result = new TaskResult(task);
+    long startTime = System.currentTimeMillis();
+
     try {
+      // Check task timeout setting
+      long timeoutSeconds = task.getTaskDefinition()
+          .map(def -> def.getTimeoutSeconds())
+          .filter(t -> t > 0)
+          .orElse(10L); // default 10 seconds
+
       PaymentAuthorizeRequest request = objectMapper.convertValue(task.getInputData(), PaymentAuthorizeRequest.class);
       PaymentResponse response = paymentClient.authorize(request);
+
+      // Check if execution time exceeded timeout
+      long executionTime = System.currentTimeMillis() - startTime;
+      if (executionTime > timeoutSeconds * 1000L) {
+        // Return COMPLETED with TIMEOUT status so workflow can proceed to decide_payment
+        result.setStatus(TaskResult.Status.COMPLETED);
+        result.setOutputData(Map.of(
+            "status", "TIMEOUT",
+            "executionTimeMs", executionTime,
+            "timeoutSeconds", timeoutSeconds
+        ));
+        return result;
+      }
+
       String status = response == null ? "UNKNOWN" : response.status();
 
       if ("FAILED".equals(status)) {

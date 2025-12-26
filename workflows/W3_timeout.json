@@ -1,6 +1,94 @@
 {
-  "name": "W3_timeout",
+  "name": "timeout_handling",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "W3: Timeout handling scenario - fail delayed payment requests with timeout",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "authorize_payment",
+      "taskReferenceName": "authorize_payment",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "amount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "method": "${workflow.input.paymentMethod}",
+        "failRate": "${workflow.input.paymentFailRate}",
+        "delayMs": "${workflow.input.paymentDelayMs}"
+      }
+    },
+    {
+      "name": "decide_payment",
+      "taskReferenceName": "decide_payment",
+      "type": "DECISION",
+      "inputParameters": {
+        "paymentStatus": "${authorize_payment.output.status}",
+        "orderNo": "${workflow.input.orderNo}"
+      },
+      "caseValueParam": "paymentStatus",
+      "decisionCases": {
+        "AUTHORIZED": [
+          {
+            "name": "reserve_inventory",
+            "taskReferenceName": "reserve_inventory",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "items": "${workflow.input.items}",
+              "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+              "partialFailIndex": "${workflow.input.partialFailIndex}"
+            }
+          },
+          {
+            "name": "confirm_order",
+            "taskReferenceName": "confirm_order",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ]
+      },
+      "defaultCase": [
+        {
+          "name": "cancel_order",
+          "taskReferenceName": "cancel_order_payment_failed",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "orderNo": "${workflow.input.orderNo}"
+          }
+        }
+      ]
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "TIME_OUT_WF",
+  "timeoutSeconds": 30
 }

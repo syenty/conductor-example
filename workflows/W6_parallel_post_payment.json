@@ -1,6 +1,146 @@
 {
-  "name": "W6_parallel_post_payment",
+  "name": "parallel_post_payment",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "W6: Parallel post payment scenario - execute reserve inventory and order status update in parallel after payment",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "parallel_tasks",
+      "taskReferenceName": "parallel_tasks",
+      "type": "FORK_JOIN",
+      "forkTasks": [
+        [
+          {
+            "name": "authorize_payment",
+            "taskReferenceName": "authorize_payment",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "amount": "${workflow.input.totalAmount}",
+              "currency": "${workflow.input.currency}",
+              "method": "${workflow.input.paymentMethod}",
+              "failRate": "${workflow.input.paymentFailRate}",
+              "delayMs": "${workflow.input.paymentDelayMs}"
+            }
+          }
+        ],
+        [
+          {
+            "name": "check_inventory",
+            "taskReferenceName": "check_inventory",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "items": "${workflow.input.items}",
+              "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+              "partialFailIndex": "${workflow.input.partialFailIndex}"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "decide_parallel_result",
+      "taskReferenceName": "decide_parallel_result",
+      "type": "DECISION",
+      "inputParameters": {
+        "paymentStatus": "${authorize_payment.output.status}",
+        "inventoryStatus": "${check_inventory.output.status}",
+        "orderNo": "${workflow.input.orderNo}"
+      },
+      "caseExpression": "$.paymentStatus == 'AUTHORIZED' && $.inventoryStatus == 'AVAILABLE' ? 'BOTH_SUCCESS' : $.paymentStatus != 'AUTHORIZED' && $.inventoryStatus != 'AVAILABLE' ? 'BOTH_FAILED' : $.paymentStatus != 'AUTHORIZED' ? 'PAYMENT_FAILED' : 'INVENTORY_FAILED'",
+      "decisionCases": {
+        "BOTH_SUCCESS": [
+          {
+            "name": "reserve_inventory",
+            "taskReferenceName": "reserve_inventory",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "items": "${workflow.input.items}",
+              "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+              "partialFailIndex": "${workflow.input.partialFailIndex}"
+            }
+          },
+          {
+            "name": "confirm_order",
+            "taskReferenceName": "confirm_order",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ],
+        "PAYMENT_FAILED": [
+          {
+            "name": "cancel_order",
+            "taskReferenceName": "cancel_order_payment_failed",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ],
+        "INVENTORY_FAILED": [
+          {
+            "name": "refund_payment",
+            "taskReferenceName": "refund_payment_inventory_failed",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "reason": "inventory_not_available"
+            }
+          },
+          {
+            "name": "cancel_order",
+            "taskReferenceName": "cancel_order_inventory_failed",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ],
+        "BOTH_FAILED": [
+          {
+            "name": "cancel_order",
+            "taskReferenceName": "cancel_order_both_failed",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 300
 }
