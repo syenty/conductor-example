@@ -15,7 +15,7 @@
    ↓
 2. decide_payment_method (SWITCH)
    ├─ [CARD] → 3a. authorize_payment_card
-   ├─ [BANK_TRANSFER] → 3b. wait_for_bank_deposit (WAIT) → 3c. confirm_bank_transfer
+   ├─ [BANK_TRANSFER] → 3b. authorize_payment_bank → 3c. wait_for_bank_deposit (WAIT) → 3d. confirm_bank_transfer
    └─ [default] → cancel_order_invalid_method
    ↓
 4. reserve_inventory
@@ -65,7 +65,20 @@
 
 ## 분기 B: BANK_TRANSFER (무통장입금)
 
-### 3b. wait_for_bank_deposit
+### 3b. authorize_payment_bank
+- **타입**: SIMPLE
+- **동작**: 무통장입금 결제 정보 생성 (Payment 데이터 생성)
+- **입력 파라미터**:
+  - orderNo: 주문번호
+  - amount: 결제 금액
+  - currency: 통화
+  - method: "BANK_TRANSFER"
+  - failRate: 0 (무통장입금은 실패 없음)
+  - delayMs: 0
+- **결과**: Payment 데이터 생성 (상태: AUTHORIZED) → wait_for_bank_deposit으로 진행
+- **중요**: 이 단계에서 Payment 데이터가 생성되어야 이후 confirm_bank_transfer에서 조회 가능
+
+### 3c. wait_for_bank_deposit
 - **타입**: WAIT
 - **동작**: 외부 입금 확인 이벤트 대기
 - **입력 파라미터**:
@@ -77,14 +90,14 @@
   - 외부에서 API 호출로 task를 완료시켜야 진행
   - 무통장입금 → 은행 입금 확인 → 관리자 확인 → API 호출
 
-### 3c. confirm_bank_transfer
+### 3d. confirm_bank_transfer
 - **타입**: SIMPLE
-- **동작**: 입금 확인 후 결제 승인 상태로 변경
+- **동작**: 입금 확인 이벤트 기록
 - **입력 파라미터**:
   - orderNo: 주문번호
   - amount: 결제 금액
   - currency: 통화
-- **결과**: Payment 상태를 AUTHORIZED로 변경 → reserve_inventory로 진행
+- **결과**: PaymentEvent에 입금 확인 이벤트 기록 → reserve_inventory로 진행
 
 ---
 
@@ -199,9 +212,10 @@ create_order
 ```
 create_order
 → decide_payment_method [BANK_TRANSFER]
+→ authorize_payment_bank (Payment 데이터 생성)
 → wait_for_bank_deposit (WAIT - 대기)
    ↓ (외부 API 호출로 완료)
-→ confirm_bank_transfer
+→ confirm_bank_transfer (입금 확인 이벤트 기록)
 → reserve_inventory
 → confirm_order ✅
 ```
