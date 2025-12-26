@@ -1,7 +1,10 @@
 {
   "name": "authorize_payment",
   "description": "Authorize payment in payment-app",
-  "retryCount": 0,
+  "retryCount": 3,
+  "retryLogic": "EXPONENTIAL_BACKOFF",
+  "retryDelaySeconds": 2,
+  "backoffScaleFactor": 2,
   "timeoutSeconds": 60,
   "responseTimeoutSeconds": 30,
   "timeoutPolicy": "TIME_OUT_WF",
