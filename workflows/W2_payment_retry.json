@@ -1,6 +1,98 @@
 {
-  "name": "W2_payment_retry",
+  "name": "payment_retry",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "Payment retry scenario: auto-retry on payment failure with exponential backoff",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "authorize_payment",
+      "taskReferenceName": "authorize_payment",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "amount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "method": "${workflow.input.paymentMethod}",
+        "failRate": "${workflow.input.paymentFailRate}",
+        "delayMs": "${workflow.input.paymentDelayMs}"
+      },
+      "retryCount": 3,
+      "retryDelaySeconds": 2,
+      "retryLogic": "EXPONENTIAL_BACKOFF",
+      "backoffScaleFactor": 1.5
+    },
+    {
+      "name": "decide_payment",
+      "taskReferenceName": "decide_payment",
+      "type": "DECISION",
+      "inputParameters": {
+        "paymentStatus": "${authorize_payment.output.status}",
+        "orderNo": "${workflow.input.orderNo}"
+      },
+      "caseValueParam": "paymentStatus",
+      "decisionCases": {
+        "AUTHORIZED": [
+          {
+            "name": "reserve_inventory",
+            "taskReferenceName": "reserve_inventory",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "items": "${workflow.input.items}",
+              "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+              "partialFailIndex": "${workflow.input.partialFailIndex}"
+            }
+          },
+          {
+            "name": "confirm_order",
+            "taskReferenceName": "confirm_order",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ]
+      },
+      "defaultCase": [
+        {
+          "name": "cancel_order",
+          "taskReferenceName": "cancel_order_payment_failed",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "orderNo": "${workflow.input.orderNo}"
+          }
+        }
+      ]
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 300
 }

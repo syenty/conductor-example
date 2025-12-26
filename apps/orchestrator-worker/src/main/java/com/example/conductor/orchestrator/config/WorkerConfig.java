@@ -12,39 +12,38 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class WorkerConfig {
 
-    @Bean
-    public TaskClient taskClient(ConductorWorkerProperties properties) {
-        TaskClient client = new TaskClient();
-        client.setRootURI(properties.getConductorBaseUrl());
-        return client;
+  @Bean
+  public TaskClient taskClient(ConductorWorkerProperties properties) {
+    TaskClient client = new TaskClient();
+    client.setRootURI(properties.getConductorBaseUrl());
+    return client;
+  }
+
+  @Bean
+  public TaskRunnerConfigurer taskRunnerConfigurer(
+      TaskClient taskClient,
+      List<Worker> workers,
+      ConductorWorkerProperties properties) {
+    System.out.println("Worker count: " + (workers != null ? workers.size() : 0));
+    System.out.println("Thread count: " + properties.getThreadCount());
+    System.out.println("Worker ID: " + properties.getWorkerId());
+
+    int threadCount = properties.getThreadCount() > 0 ? properties.getThreadCount() : 1;
+    String workerPrefix = properties.getWorkerId() != null ? properties.getWorkerId() : "worker";
+
+    // Build taskThreadCount map: assign thread count per task type
+    Map<String, Integer> taskThreadCount = new HashMap<>();
+    if (workers != null) {
+      for (Worker worker : workers) {
+        taskThreadCount.put(worker.getTaskDefName(), threadCount);
+      }
     }
 
-    @Bean
-    public TaskRunnerConfigurer taskRunnerConfigurer(
-        TaskClient taskClient,
-        List<Worker> workers,
-        ConductorWorkerProperties properties
-    ) {
-        System.out.println("Worker count: " + (workers != null ? workers.size() : 0));
-        System.out.println("Thread count: " + properties.getThreadCount());
-        System.out.println("Worker ID: " + properties.getWorkerId());
-
-        int threadCount = properties.getThreadCount() > 0 ? properties.getThreadCount() : 1;
-        String workerPrefix = properties.getWorkerId() != null ? properties.getWorkerId() : "worker";
-
-        // Build taskThreadCount map: assign thread count per task type
-        Map<String, Integer> taskThreadCount = new HashMap<>();
-        if (workers != null) {
-            for (Worker worker : workers) {
-                taskThreadCount.put(worker.getTaskDefName(), threadCount);
-            }
-        }
-
-        TaskRunnerConfigurer configurer = new TaskRunnerConfigurer.Builder(taskClient, workers)
-            .withWorkerNamePrefix(workerPrefix)
-            .withTaskThreadCount(taskThreadCount)
-            .build();
-        configurer.init();
-        return configurer;
-    }
+    TaskRunnerConfigurer configurer = new TaskRunnerConfigurer.Builder(taskClient, workers)
+        .withWorkerNamePrefix(workerPrefix)
+        .withTaskThreadCount(taskThreadCount)
+        .build();
+    configurer.init();
+    return configurer;
+  }
 }
