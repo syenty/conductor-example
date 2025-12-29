@@ -36,8 +36,25 @@ public class ReserveInventoryWorker implements Worker {
             );
             InventoryReserveResponse response = inventoryClient.reserve(request);
             String status = response == null ? "UNKNOWN" : response.status();
-            result.setStatus(TaskResult.Status.COMPLETED);
-            result.setOutputData(Map.of("status", status));
+
+            // Check if Saga pattern is enabled (W8)
+            Boolean useSagaPattern = (Boolean) task.getInputData().get("useSagaPattern");
+            boolean isSagaMode = useSagaPattern != null && useSagaPattern;
+
+            if ("FAILED".equals(status)) {
+                if (isSagaMode) {
+                    // For Saga pattern (W8): mark task as FAILED to trigger compensation
+                    result.setStatus(TaskResult.Status.FAILED);
+                    result.setReasonForIncompletion("Inventory reservation failed: out of stock");
+                } else {
+                    // For normal workflows (W5, W6, W7): task succeeds, return status in output
+                    result.setStatus(TaskResult.Status.COMPLETED);
+                    result.setOutputData(Map.of("status", status));
+                }
+            } else {
+                result.setStatus(TaskResult.Status.COMPLETED);
+                result.setOutputData(Map.of("status", status));
+            }
         } catch (Exception ex) {
             result.setStatus(TaskResult.Status.FAILED);
             result.setReasonForIncompletion(ex.getMessage());

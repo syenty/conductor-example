@@ -1,0 +1,33 @@
+{
+  "name": "saga_inventory_compensation",
+  "version": 1,
+  "description": "W8 Compensation: Refund payment and cancel order when inventory reservation fails",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "refund_payment",
+      "taskReferenceName": "refund_payment_compensation",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "reason": "inventory_reservation_failed"
+      }
+    },
+    {
+      "name": "cancel_order",
+      "taskReferenceName": "cancel_order_compensation",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}"
+      }
+    }
+  ],
+  "inputParameters": [
+    "orderNo"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 120
+}
