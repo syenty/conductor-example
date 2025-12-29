@@ -1,6 +1,104 @@
 {
-  "name": "W5_inventory_branch",
+  "name": "inventory_shortage_branch",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "W5: Inventory shortage branch - refund payment and cancel order when out of stock",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "authorize_payment",
+      "taskReferenceName": "authorize_payment",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "amount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "method": "${workflow.input.paymentMethod}",
+        "failRate": "${workflow.input.paymentFailRate}",
+        "delayMs": "${workflow.input.paymentDelayMs}"
+      }
+    },
+    {
+      "name": "reserve_inventory",
+      "taskReferenceName": "reserve_inventory",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+        "partialFailIndex": "${workflow.input.partialFailIndex}"
+      }
+    },
+    {
+      "name": "decide_inventory",
+      "taskReferenceName": "decide_inventory",
+      "type": "SWITCH",
+      "inputParameters": {
+        "inventoryStatus": "${reserve_inventory.output.status}"
+      },
+      "expression": "inventoryStatus",
+      "evaluatorType": "value-param",
+      "decisionCases": {
+        "RESERVED": [
+          {
+            "name": "confirm_order",
+            "taskReferenceName": "confirm_order",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ]
+      },
+      "defaultCase": [
+        {
+          "name": "refund_payment",
+          "taskReferenceName": "refund_payment",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "orderNo": "${workflow.input.orderNo}",
+            "reason": "Inventory out of stock"
+          }
+        },
+        {
+          "name": "cancel_order",
+          "taskReferenceName": "cancel_order_inventory_failed",
+          "type": "SIMPLE",
+          "inputParameters": {
+            "orderNo": "${workflow.input.orderNo}",
+            "reason": "Inventory out of stock"
+          }
+        }
+      ]
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 120
 }
