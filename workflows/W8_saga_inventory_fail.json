@@ -1,6 +1,106 @@
 {
-  "name": "W8_saga_inventory_fail",
-  "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "name": "saga_inventory_fail",
+  "version": 3,
+  "description": "W8: Saga pattern - inventory fail triggers compensation (refund + cancel)",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "authorize_payment",
+      "taskReferenceName": "authorize_payment",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "amount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "method": "${workflow.input.paymentMethod}",
+        "failRate": "${workflow.input.paymentFailRate}",
+        "delayMs": "${workflow.input.paymentDelayMs}"
+      }
+    },
+    {
+      "name": "reserve_inventory",
+      "taskReferenceName": "reserve_inventory",
+      "type": "SIMPLE",
+      "optional": true,
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+        "partialFailIndex": "${workflow.input.partialFailIndex}",
+        "useSagaPattern": true
+      }
+    },
+    {
+      "name": "decide_saga_compensation",
+      "taskReferenceName": "decide_saga_compensation",
+      "type": "DECISION",
+      "inputParameters": {
+        "reserveStatus": "${reserve_inventory.status}",
+        "orderNo": "${workflow.input.orderNo}"
+      },
+      "caseExpression": "$.reserveStatus == 'COMPLETED' ? 'SUCCESS' : 'FAILED'",
+      "decisionCases": {
+        "SUCCESS": [
+          {
+            "name": "confirm_order",
+            "taskReferenceName": "confirm_order",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ],
+        "FAILED": [
+          {
+            "name": "refund_payment",
+            "taskReferenceName": "refund_payment_saga",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "reason": "inventory_reservation_failed"
+            }
+          },
+          {
+            "name": "cancel_order",
+            "taskReferenceName": "cancel_order_saga",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "failureWorkflow": "saga_inventory_compensation",
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 300
 }
