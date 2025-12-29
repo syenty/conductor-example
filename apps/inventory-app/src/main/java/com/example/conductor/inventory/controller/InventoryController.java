@@ -34,6 +34,11 @@ public class InventoryController {
         return inventoryService.getItem(productId);
     }
 
+    @PostMapping("/check-availability")
+    public InventoryReserveResponse checkAvailability(@RequestBody InventoryReserveRequest request) {
+        return inventoryService.checkAvailability(request);
+    }
+
     @PostMapping("/reservations")
     public InventoryReserveResponse reserve(@RequestBody InventoryReserveRequest request) {
         return inventoryService.reserve(request);

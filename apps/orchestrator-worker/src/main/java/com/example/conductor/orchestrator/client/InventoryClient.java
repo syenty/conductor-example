@@ -18,6 +18,15 @@ public class InventoryClient {
         this.endpoints = endpoints;
     }
 
+    public InventoryReserveResponse checkAvailability(InventoryReserveRequest request) {
+        ResponseEntity<InventoryReserveResponse> response = restTemplate.postForEntity(
+            endpoints.getInventoryBaseUrl() + "/inventory/check-availability",
+            request,
+            InventoryReserveResponse.class
+        );
+        return response.getBody();
+    }
+
     public InventoryReserveResponse reserve(InventoryReserveRequest request) {
         ResponseEntity<InventoryReserveResponse> response = restTemplate.postForEntity(
             endpoints.getInventoryBaseUrl() + "/inventory/reservations",

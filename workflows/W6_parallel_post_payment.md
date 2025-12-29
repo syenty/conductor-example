@@ -1,7 +1,35 @@
-# W3: Parallel Processing Workflow
+# W6: Parallel Post Payment Workflow
 
 ## 개요
-결제 승인과 재고 확인을 병렬로 실행하여 처리 시간을 단축하는 워크플로우입니다. FORK/JOIN 패턴을 사용하여 성능을 최적화합니다.
+결제 승인과 재고 확인을 병렬로 실행하여 처리 시간을 단축하는 워크플로우입니다. **FORK/JOIN** 패턴을 사용하여 성능을 최적화합니다.
+
+## FORK/JOIN 개념도
+
+```
+                    create_order
+                         │
+                         ▼
+                 ┌───────────────┐
+                 │   FORK_JOIN   │
+                 │  (병렬 분기)   │
+                 └───────┬───────┘
+            ┌────────────┴────────────┐
+            ▼                         ▼
+    ┌───────────────┐         ┌───────────────┐
+    │authorize_payment│       │check_inventory │
+    │   (결제 승인)   │         │  (재고 확인)   │
+    └───────┬───────┘         └───────┬───────┘
+            │                         │
+            └────────────┬────────────┘
+                         ▼
+                 ┌───────────────┐
+                 │     JOIN      │
+                 │ (완료 대기)    │
+                 └───────┬───────┘
+                         ▼
+              decide_parallel_result
+                    (분기점)
+```
 
 ## 워크플로우 실행 순서
 
@@ -162,14 +190,14 @@
 ## 실행 방법
 
 ```bash
-./scripts/scenarios/w3_parallel_processing.sh
+./scripts/scenarios/w6_parallel_post_payment.sh
 ```
 
 ### 입력 예시
 
 ```json
 {
-  "orderNo": "ORD-W3-001",
+  "orderNo": "ORD-W6-001",
   "totalAmount": 15000,
   "currency": "KRW",
   "customerId": "CUST-001",
@@ -201,7 +229,7 @@ create_order (100ms) → authorize_payment (1000ms) → reserve_inventory (500ms
 총 소요 시간: ~1600ms
 ```
 
-### W3 (병렬 처리)
+### W6 (병렬 처리)
 ```
 create_order (100ms) → [authorize_payment (1000ms) || check_inventory (500ms)] → reserve_inventory (500ms)
 총 소요 시간: ~1600ms → ~1100ms (약 30% 단축)
@@ -249,19 +277,19 @@ create_order
 
 ## Task 정의 파일
 
-- 워크플로우: [workflows/W3_parallel_processing.json](../../workflows/W3_parallel_processing.json)
+- 워크플로우: [workflows/W6_parallel_post_payment.json](W6_parallel_post_payment.json)
 - Task 정의:
-  - [tasks/create_order.json](../../tasks/create_order.json)
-  - [tasks/authorize_payment.json](../../tasks/authorize_payment.json)
-  - [tasks/check_inventory.json](../../tasks/check_inventory.json) (신규)
-  - [tasks/reserve_inventory.json](../../tasks/reserve_inventory.json)
-  - [tasks/confirm_order.json](../../tasks/confirm_order.json)
-  - [tasks/cancel_order.json](../../tasks/cancel_order.json)
-  - [tasks/refund_payment.json](../../tasks/refund_payment.json)
+  - [tasks/create_order.json](../tasks/create_order.json)
+  - [tasks/authorize_payment.json](../tasks/authorize_payment.json)
+  - [tasks/check_inventory.json](../tasks/check_inventory.json)
+  - [tasks/reserve_inventory.json](../tasks/reserve_inventory.json)
+  - [tasks/confirm_order.json](../tasks/confirm_order.json)
+  - [tasks/cancel_order.json](../tasks/cancel_order.json)
+  - [tasks/refund_payment.json](../tasks/refund_payment.json)
 
-## W1 vs W3 비교
+## W1 vs W6 비교
 
-| 항목 | W1 (Basic Order) | W3 (Parallel Processing) |
+| 항목 | W1 (Basic Order) | W6 (Parallel Post Payment) |
 |------|------------------|--------------------------|
 | **실행 방식** | 순차 처리 | 병렬 처리 (FORK/JOIN) |
 | **결제/재고** | 순차 실행 | 동시 실행 |
