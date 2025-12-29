@@ -1,6 +1,6 @@
 {
   "name": "parallel_post_payment",
-  "version": 1,
+  "version": 4,
   "description": "W6: Parallel post payment scenario - execute reserve inventory and order status update in parallel after payment",
   "ownerEmail": "dev@example.com",
   "tasks": [
@@ -18,8 +18,8 @@
       }
     },
     {
-      "name": "parallel_tasks",
-      "taskReferenceName": "parallel_tasks",
+      "name": "fork_parallel",
+      "taskReferenceName": "fork_parallel",
       "type": "FORK_JOIN",
       "forkTasks": [
         [
@@ -27,6 +27,8 @@
             "name": "authorize_payment",
             "taskReferenceName": "authorize_payment",
             "type": "SIMPLE",
+            "retryCount": 0,
+            "optional": true,
             "inputParameters": {
               "orderNo": "${workflow.input.orderNo}",
               "amount": "${workflow.input.totalAmount}",
@@ -53,6 +55,15 @@
       ]
     },
     {
+      "name": "join_parallel",
+      "taskReferenceName": "join_parallel",
+      "type": "JOIN",
+      "joinOn": [
+        "authorize_payment",
+        "check_inventory"
+      ]
+    },
+    {
       "name": "decide_parallel_result",
       "taskReferenceName": "decide_parallel_result",
       "type": "DECISION",
@@ -61,7 +72,7 @@
         "inventoryStatus": "${check_inventory.output.status}",
         "orderNo": "${workflow.input.orderNo}"
       },
-      "caseExpression": "$.paymentStatus == 'AUTHORIZED' && $.inventoryStatus == 'AVAILABLE' ? 'BOTH_SUCCESS' : $.paymentStatus != 'AUTHORIZED' && $.inventoryStatus != 'AVAILABLE' ? 'BOTH_FAILED' : $.paymentStatus != 'AUTHORIZED' ? 'PAYMENT_FAILED' : 'INVENTORY_FAILED'",
+      "caseExpression": "$.paymentStatus == 'AUTHORIZED' && $.inventoryStatus == 'AVAILABLE' ? 'BOTH_SUCCESS' : ($.paymentStatus == null || $.paymentStatus != 'AUTHORIZED') && $.inventoryStatus != 'AVAILABLE' ? 'BOTH_FAILED' : ($.paymentStatus == null || $.paymentStatus != 'AUTHORIZED') ? 'PAYMENT_FAILED' : 'INVENTORY_FAILED'",
       "decisionCases": {
         "BOTH_SUCCESS": [
           {

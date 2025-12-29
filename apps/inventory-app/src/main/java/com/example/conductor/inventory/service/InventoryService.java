@@ -53,6 +53,48 @@ public class InventoryService {
         return inventoryRepository.findByProductId(productId).map(this::toItemResponse);
     }
 
+    public InventoryReserveResponse checkAvailability(InventoryReserveRequest request) {
+        List<ReservationItemResponse> responses = new ArrayList<>();
+        boolean anyFailed = false;
+        List<ReservationItemRequest> items = request.items() == null ? List.of() : request.items();
+        boolean forceOutOfStock = request.forceOutOfStock() != null && request.forceOutOfStock();
+        Integer partialFailIndex = request.partialFailIndex();
+
+        for (int i = 0; i < items.size(); i++) {
+            ReservationItemRequest itemRequest = items.get(i);
+            boolean shouldFail = forceOutOfStock || (partialFailIndex != null && partialFailIndex == i);
+
+            String status;
+            if (shouldFail) {
+                status = "OUT_OF_STOCK";
+                anyFailed = true;
+            } else {
+                InventoryItem item = inventoryRepository.findByProductId(itemRequest.productId()).orElse(null);
+                if (item == null) {
+                    status = "OUT_OF_STOCK";
+                    anyFailed = true;
+                } else {
+                    int available = item.getStock() - item.getReserved();
+                    if (available < itemRequest.quantity()) {
+                        status = "OUT_OF_STOCK";
+                        anyFailed = true;
+                    } else {
+                        status = "AVAILABLE";
+                    }
+                }
+            }
+
+            responses.add(new ReservationItemResponse(
+                itemRequest.productId(),
+                itemRequest.quantity(),
+                status
+            ));
+        }
+
+        String overallStatus = anyFailed ? "OUT_OF_STOCK" : "AVAILABLE";
+        return new InventoryReserveResponse(request.orderNo(), overallStatus, responses);
+    }
+
     @Transactional
     public InventoryReserveResponse reserve(InventoryReserveRequest request) {
         List<ReservationItemResponse> responses = new ArrayList<>();
