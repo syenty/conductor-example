@@ -1,6 +1,64 @@
 {
-  "name": "W11_event_wait",
+  "name": "event_wait_deposit",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "W11: Event wait - wait for bank transfer deposit confirmation",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "BANK_TRANSFER",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "wait_for_deposit",
+      "taskReferenceName": "wait_for_deposit",
+      "type": "WAIT",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "message": "Waiting for bank transfer deposit confirmation"
+      }
+    },
+    {
+      "name": "reserve_inventory",
+      "taskReferenceName": "reserve_inventory",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+        "partialFailIndex": "${workflow.input.partialFailIndex}"
+      }
+    },
+    {
+      "name": "confirm_order",
+      "taskReferenceName": "confirm_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}"
+      }
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 600
 }
