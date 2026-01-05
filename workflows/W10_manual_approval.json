@@ -1,6 +1,152 @@
 {
-  "name": "W10_manual_approval",
+  "name": "manual_approval",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "W10: Manual approval for high value orders (>= 100,000 KRW)",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "authorize_payment",
+      "taskReferenceName": "authorize_payment",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "amount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "method": "${workflow.input.paymentMethod}",
+        "failRate": "${workflow.input.paymentFailRate}",
+        "delayMs": "${workflow.input.paymentDelayMs}"
+      }
+    },
+    {
+      "name": "check_order_value",
+      "taskReferenceName": "check_order_value",
+      "type": "DECISION",
+      "inputParameters": {
+        "totalAmount": "${workflow.input.totalAmount}",
+        "orderNo": "${workflow.input.orderNo}"
+      },
+      "caseExpression": "$.totalAmount >= 100000 ? 'HIGH_VALUE' : 'NORMAL'",
+      "decisionCases": {
+        "HIGH_VALUE": [
+          {
+            "name": "approve_high_value_order",
+            "taskReferenceName": "approve_high_value_order",
+            "type": "HUMAN",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "totalAmount": "${workflow.input.totalAmount}",
+              "customerId": "${workflow.input.customerId}",
+              "items": "${workflow.input.items}",
+              "message": "High value order requires manual approval"
+            }
+          },
+          {
+            "name": "decide_approval_result",
+            "taskReferenceName": "decide_approval_result",
+            "type": "DECISION",
+            "inputParameters": {
+              "approvalStatus": "${approve_high_value_order.status}",
+              "approved": "${approve_high_value_order.output.approved}",
+              "orderNo": "${workflow.input.orderNo}"
+            },
+            "caseExpression": "$.approvalStatus == 'COMPLETED' && $.approved == true ? 'APPROVED' : 'REJECTED'",
+            "decisionCases": {
+              "APPROVED": [
+                {
+                  "name": "reserve_inventory",
+                  "taskReferenceName": "reserve_inventory_approved",
+                  "type": "SIMPLE",
+                  "inputParameters": {
+                    "orderNo": "${workflow.input.orderNo}",
+                    "items": "${workflow.input.items}",
+                    "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+                    "partialFailIndex": "${workflow.input.partialFailIndex}"
+                  }
+                },
+                {
+                  "name": "confirm_order",
+                  "taskReferenceName": "confirm_order_approved",
+                  "type": "SIMPLE",
+                  "inputParameters": {
+                    "orderNo": "${workflow.input.orderNo}"
+                  }
+                }
+              ],
+              "REJECTED": [
+                {
+                  "name": "refund_payment",
+                  "taskReferenceName": "refund_payment_rejected",
+                  "type": "SIMPLE",
+                  "inputParameters": {
+                    "orderNo": "${workflow.input.orderNo}",
+                    "reason": "Order rejected by admin"
+                  }
+                },
+                {
+                  "name": "cancel_order",
+                  "taskReferenceName": "cancel_order_rejected",
+                  "type": "SIMPLE",
+                  "inputParameters": {
+                    "orderNo": "${workflow.input.orderNo}",
+                    "reason": "Order rejected by admin"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "NORMAL": [
+          {
+            "name": "reserve_inventory",
+            "taskReferenceName": "reserve_inventory_normal",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}",
+              "items": "${workflow.input.items}",
+              "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+              "partialFailIndex": "${workflow.input.partialFailIndex}"
+            }
+          },
+          {
+            "name": "confirm_order",
+            "taskReferenceName": "confirm_order_normal",
+            "type": "SIMPLE",
+            "inputParameters": {
+              "orderNo": "${workflow.input.orderNo}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 600
 }
