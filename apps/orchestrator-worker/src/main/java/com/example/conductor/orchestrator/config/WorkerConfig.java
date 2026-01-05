@@ -1,6 +1,7 @@
 package com.example.conductor.orchestrator.config;
 
 import com.netflix.conductor.client.http.TaskClient;
+import com.netflix.conductor.client.http.WorkflowClient;
 import com.netflix.conductor.client.automator.TaskRunnerConfigurer;
 import com.netflix.conductor.client.worker.Worker;
 import java.util.HashMap;
@@ -15,6 +16,13 @@ public class WorkerConfig {
   @Bean
   public TaskClient taskClient(ConductorWorkerProperties properties) {
     TaskClient client = new TaskClient();
+    client.setRootURI(properties.getConductorBaseUrl());
+    return client;
+  }
+
+  @Bean
+  public WorkflowClient workflowClient(ConductorWorkerProperties properties) {
+    WorkflowClient client = new WorkflowClient();
     client.setRootURI(properties.getConductorBaseUrl());
     return client;
   }
