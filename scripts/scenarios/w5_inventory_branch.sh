@@ -57,7 +57,22 @@ echo "Workflow ID: ${WORKFLOW_ID_2}"
 echo "Expected: Payment refunded, Order cancelled (out of stock)"
 
 echo ""
+echo "Waiting for workflows to complete..."
+sleep 5
+
+echo "Checking workflow status..."
+echo "Test 1 (Normal - should be COMPLETED):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_1}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
 echo ""
-echo "=== Check Results ==="
-echo "Test 1 (normal): curl -sS \"${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_1}\" | jq '.status'"
-echo "Test 2 (out of stock): curl -sS \"${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_2}\" | jq '.status'"
+echo "Test 2 (Out of stock - should be COMPLETED with refund):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_2}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
+echo ""
+echo ""
+echo "=== Database Check Commands ==="
+echo "Order 1: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_1}';\""
+echo "Order 2: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_2}';\""
+echo "Payment 2: docker exec payment-db psql -U payment_user -d payment_db -c \"SELECT order_no, status FROM payments WHERE order_no = '${ORDER_NO_2}';\""

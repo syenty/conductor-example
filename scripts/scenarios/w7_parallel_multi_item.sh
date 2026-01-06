@@ -32,9 +32,14 @@ echo "Workflow ID: ${WORKFLOW_ID_1}"
 echo "Expected: BOTH_SUCCESS → reserve 2 items → confirm_order"
 
 echo ""
+echo "Waiting for workflow to complete..."
+sleep 8
+
+echo "Checking workflow status..."
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_1}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
 echo ""
-echo "=== Check Results ==="
-echo "Test 1 (multi item success): curl -sS \"${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_1}\" | jq '{status: .status, output: .output}'"
 echo ""
 echo "=== Database Check Commands ==="
 echo "Orders: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_1}';\""

@@ -57,6 +57,20 @@ echo "Workflow ID: ${WORKFLOW_ID_2}"
 echo "Expected: Workflow paused at wait_for_bank_deposit task"
 
 echo ""
+echo "Waiting for workflows to complete..."
+sleep 5
+
+echo "Checking workflow status..."
+echo "Test 1 (CARD - should be COMPLETED):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_1}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
+echo ""
+echo "Test 2 (BANK_TRANSFER - should be IN_PROGRESS at wait_for_bank_deposit):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_2}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
+echo ""
 echo ""
 echo "=== To complete BANK_TRANSFER workflow ==="
 echo "Run the following command to signal deposit confirmation:"
@@ -66,3 +80,7 @@ echo "  -H \"Content-Type: application/json\" \\"
 echo "  -d '{\"workflowId\": \"${WORKFLOW_ID_2}\", \"taskRefName\": \"wait_for_bank_deposit\", \"output\": {\"deposited\": true}}'"
 echo ""
 echo "Or use: ./scripts/scenarios/w4_complete_deposit.sh ${WORKFLOW_ID_2}"
+echo ""
+echo "=== Database Check Commands ==="
+echo "Order 1: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_1}';\""
+echo "Order 2: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_2}';\""

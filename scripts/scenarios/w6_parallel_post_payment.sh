@@ -109,9 +109,33 @@ echo "Workflow ID: ${WORKFLOW_ID_4}"
 echo "Expected: BOTH_FAILED → cancel_order"
 
 echo ""
+echo "Waiting for workflows to complete..."
+sleep 8
+
+echo "Checking workflow status..."
+echo "Test 1 (Both success):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_1}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
 echo ""
-echo "=== Check Results ==="
-echo "Test 1 (both success): curl -sS \"${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_1}\" | jq '{status: .status, output: .output}'"
-echo "Test 2 (payment failed): curl -sS \"${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_2}\" | jq '{status: .status}'"
-echo "Test 3 (inventory failed): curl -sS \"${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_3}\" | jq '{status: .status}'"
-echo "Test 4 (both failed): curl -sS \"${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_4}\" | jq '{status: .status}'"
+echo "Test 2 (Payment failed):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_2}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
+echo ""
+echo "Test 3 (Inventory failed):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_3}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
+echo ""
+echo "Test 4 (Both failed):"
+curl -sS "${CONDUCTOR_BASE_URL}/workflow/${WORKFLOW_ID_4}" | \
+  jq '{status: .status, tasks: [.tasks[] | {name: .referenceTaskName, status: .status}]}'
+
+echo ""
+echo ""
+echo "=== Database Check Commands ==="
+echo "Order 1: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_1}';\""
+echo "Order 2: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_2}';\""
+echo "Order 3: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_3}';\""
+echo "Order 4: docker exec order-db psql -U order_user -d order_db -c \"SELECT order_no, status FROM orders WHERE order_no = '${ORDER_NO_4}';\""
