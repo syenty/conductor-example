@@ -1,0 +1,65 @@
+{
+  "name": "shipping_process_subflow",
+  "version": 1,
+  "description": "Sub-workflow: Reusable shipping processing workflow",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "allocate_warehouse",
+      "taskReferenceName": "allocate_warehouse",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "deliveryType": "${workflow.input.deliveryType}"
+      }
+    },
+    {
+      "name": "pack_items",
+      "taskReferenceName": "pack_items",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "warehouse": "${allocate_warehouse.output.warehouseId}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "assign_courier",
+      "taskReferenceName": "assign_courier",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "deliveryType": "${workflow.input.deliveryType}",
+        "destination": "${workflow.input.deliveryAddress}"
+      }
+    },
+    {
+      "name": "generate_tracking",
+      "taskReferenceName": "generate_tracking",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "courierId": "${assign_courier.output.courierId}",
+        "warehouseId": "${allocate_warehouse.output.warehouseId}"
+      }
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "items",
+    "deliveryType",
+    "deliveryAddress"
+  ],
+  "outputParameters": {
+    "warehouseId": "${allocate_warehouse.output.warehouseId}",
+    "courierId": "${assign_courier.output.courierId}",
+    "trackingNumber": "${generate_tracking.output.trackingNumber}",
+    "estimatedDeliveryDate": "${assign_courier.output.estimatedDeliveryDate}"
+  },
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 300
+}
