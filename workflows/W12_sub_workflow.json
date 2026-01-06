@@ -1,6 +1,89 @@
 {
-  "name": "W12_sub_workflow",
+  "name": "order_with_shipping_subflow",
   "version": 1,
-  "description": "TODO: define workflow steps per README scenario",
-  "tasks": []
+  "description": "W12: Standard order with shipping sub-workflow",
+  "ownerEmail": "dev@example.com",
+  "tasks": [
+    {
+      "name": "create_order",
+      "taskReferenceName": "create_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "totalAmount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "customerId": "${workflow.input.customerId}",
+        "paymentMethod": "${workflow.input.paymentMethod}",
+        "items": "${workflow.input.items}"
+      }
+    },
+    {
+      "name": "authorize_payment",
+      "taskReferenceName": "authorize_payment",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "amount": "${workflow.input.totalAmount}",
+        "currency": "${workflow.input.currency}",
+        "method": "${workflow.input.paymentMethod}",
+        "failRate": "${workflow.input.paymentFailRate}",
+        "delayMs": "${workflow.input.paymentDelayMs}"
+      }
+    },
+    {
+      "name": "reserve_inventory",
+      "taskReferenceName": "reserve_inventory",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "forceOutOfStock": "${workflow.input.forceOutOfStock}",
+        "partialFailIndex": "${workflow.input.partialFailIndex}"
+      }
+    },
+    {
+      "name": "shipping_process_subflow",
+      "taskReferenceName": "process_shipping",
+      "type": "SUB_WORKFLOW",
+      "subWorkflowParam": {
+        "name": "shipping_process_subflow",
+        "version": 1
+      },
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "items": "${workflow.input.items}",
+        "deliveryType": "${workflow.input.deliveryType}",
+        "deliveryAddress": "${workflow.input.deliveryAddress}"
+      }
+    },
+    {
+      "name": "confirm_order",
+      "taskReferenceName": "confirm_order",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "orderNo": "${workflow.input.orderNo}",
+        "trackingNumber": "${process_shipping.output.trackingNumber}",
+        "estimatedDeliveryDate": "${process_shipping.output.estimatedDeliveryDate}"
+      }
+    }
+  ],
+  "inputParameters": [
+    "orderNo",
+    "totalAmount",
+    "currency",
+    "customerId",
+    "paymentMethod",
+    "paymentFailRate",
+    "paymentDelayMs",
+    "items",
+    "forceOutOfStock",
+    "partialFailIndex",
+    "deliveryType",
+    "deliveryAddress"
+  ],
+  "schemaVersion": 2,
+  "restartable": true,
+  "workflowStatusListenerEnabled": false,
+  "timeoutPolicy": "ALERT_ONLY",
+  "timeoutSeconds": 600
 }
